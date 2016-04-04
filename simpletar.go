@@ -88,7 +88,7 @@ func Tar(src string, dest string) error {
 
 // Untar untars the source file to dest directory
 func Untar(src string, dest string) error {
-	df, err := os.Create(dest)
+	df, err := os.Open(src)
 	if err != nil {
 		return err
 	}
