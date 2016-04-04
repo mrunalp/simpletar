@@ -62,7 +62,7 @@ var untarCommand = cli.Command{
 			log.Fatalf("--dest could not be empty")
 		}
 		if err := simpletar.Untar(source, dest); err != nil {
-			log.Fatalf("Failed to tar: %v", err)
+			log.Fatalf("Failed to untar: %v", err)
 		}
 	},
 }
