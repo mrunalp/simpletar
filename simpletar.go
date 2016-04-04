@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"syscall"
 )
 
 func tarHelper(dir string, tw *tar.Writer) error {
@@ -42,6 +43,16 @@ func tarHelper(dir string, tw *tar.Writer) error {
 			th.Name = th.Name + "/"
 		}
 
+		// handle block/char devices
+		st, ok := info.Sys().(*syscall.Stat_t)
+		if !ok {
+			return fmt.Errorf("could not convert to syscall.Stat_t")
+		}
+		if st.Mode&syscall.S_IFBLK != 0 || st.Mode&syscall.S_IFCHR != 0 {
+			th.Devmajor = int64(major(uint64(st.Rdev)))
+			th.Devminor = int64(minor(uint64(st.Rdev)))
+		}
+
 		// write the tar header
 		if err := tw.WriteHeader(th); err != nil {
 			return err
@@ -62,6 +73,14 @@ func tarHelper(dir string, tw *tar.Writer) error {
 		return nil
 	})
 	return nil
+}
+
+func major(device uint64) uint64 {
+	return (device >> 8) & 0xfff
+}
+
+func minor(device uint64) uint64 {
+	return (device & 0xff) | ((device >> 12) & 0xfff00)
 }
 
 // Tar tars the src directory and outputs the file at specified dest
@@ -130,10 +149,28 @@ func Untar(src string, dest string) error {
 				return nil
 			}
 
+		case tar.TypeBlock:
+			mode := uint32(fi.Mode() & 07777)
+			mode |= syscall.S_IFBLK
+			if err := syscall.Mknod(path, mode, int(mkdev(th.Devmajor, th.Devminor))); err != nil {
+				return err
+			}
+
+		case tar.TypeChar:
+			mode := uint32(fi.Mode() & 07777)
+			mode |= syscall.S_IFCHR
+			if err := syscall.Mknod(path, mode, int(mkdev(th.Devmajor, th.Devminor))); err != nil {
+				return err
+			}
+
 		default:
 			return fmt.Errorf("unsupported type")
 		}
 
 	}
 	return nil
+}
+
+func mkdev(major int64, minor int64) uint32 {
+	return uint32(((minor & 0xfff00) << 12) | ((major & 0xfff) << 8) | (minor & 0xff))
 }
