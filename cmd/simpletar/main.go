@@ -4,15 +4,42 @@ import (
 	"log"
 	"os"
 
+	"github.com/codegangsta/cli"
 	"github.com/mrunalp/simpletar"
 )
 
 func main() {
-	if len(os.Args) < 3 {
-		log.Fatalf("usage: simpletar <source> <destination>\n")
+	app := cli.NewApp()
+	app.Name = "simpletar"
+	app.Version = "0.1"
+	app.Usage = "simple tar/untar utility"
+	app.Commands = []cli.Command{
+		tarCommand,
 	}
 
-	if err := simpletar.Tar(os.Args[1], os.Args[2]); err != nil {
-		log.Fatalf("Failed to create tar file: %v", err)
+	if err := app.Run(os.Args); err != nil {
+		log.Fatal(err)
 	}
+}
+
+var tarCommand = cli.Command{
+	Name:  "tar",
+	Usage: "tar a directory",
+	Flags: []cli.Flag{
+		cli.StringFlag{Name: "source", Usage: "source directory path"},
+		cli.StringFlag{Name: "dest", Usage: "destination tar file path"},
+	},
+	Action: func(ctx *cli.Context) {
+		source := ctx.String("source")
+		dest := ctx.String("dest")
+		if source == "" {
+			log.Fatalf("--source could not be emptry")
+		}
+		if dest == "" {
+			log.Fatalf("--dest could not be empty")
+		}
+		if err := simpletar.Tar(source, dest); err != nil {
+			log.Fatalf("Failed to tar: %v", err)
+		}
+	},
 }
