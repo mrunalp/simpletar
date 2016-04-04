@@ -88,5 +88,52 @@ func Tar(src string, dest string) error {
 
 // Untar untars the source file to dest directory
 func Untar(src string, dest string) error {
+	df, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer df.Close()
+	tr := tar.NewReader(df)
+
+	for {
+		th, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		th.Name = filepath.Clean(th.Name)
+		path := filepath.Join(dest, th.Name)
+
+		fi := th.FileInfo()
+		switch th.Typeflag {
+		case tar.TypeDir:
+			if err := os.Mkdir(path, fi.Mode()); err != nil {
+				return err
+			}
+
+		case tar.TypeReg, tar.TypeRegA:
+			nf, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, fi.Mode())
+			if err != nil {
+				return err
+			}
+			_, err = io.Copy(nf, tr)
+			nf.Close()
+			if err != nil {
+				return err
+			}
+
+		case tar.TypeSymlink:
+			if err := os.Symlink(th.Linkname, path); err != nil {
+				return nil
+			}
+
+		default:
+			return fmt.Errorf("unsupported type")
+		}
+
+	}
 	return nil
 }
