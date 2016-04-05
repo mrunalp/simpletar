@@ -146,7 +146,7 @@ func Untar(src string, dest string) error {
 
 		case tar.TypeSymlink:
 			if err := os.Symlink(th.Linkname, path); err != nil {
-				return nil
+				return err
 			}
 
 		case tar.TypeBlock:
