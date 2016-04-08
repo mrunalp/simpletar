@@ -1,0 +1,13 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "QQrfFD89Xt7gSvmrTxK1ABLNZ/M=",
+			"path": "github.com/codegangsta/cli",
+			"revision": "c31a7975863e7810c92e2e288a9ab074f9a88f29",
+			"revisionTime": "2015-12-21T18:40:36Z"
+		}
+	],
+	"rootPath": "github.com/mrunalp/simpletar"
+}
